@@ -2,31 +2,44 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
     <title>星辰塔罗 - 智能塔罗牌测算</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         :root {
-            --primary: #1a1a2e;
-            --secondary: #16213e;
+            --primary: #0f0f1a;
+            --secondary: #1a1a2e;
             --accent: #e94560;
             --gold: #f5a623;
             --purple: #7b2cbf;
             --text: #f0f0f0;
+            --text-dim: rgba(255, 255, 255, 0.6);
             --glass: rgba(255, 255, 255, 0.05);
+            --card-w: 100px;
+            --card-h: 170px;
+        }
+
+        html {
+            font-size: 16px;
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
-            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
             background: var(--primary);
             color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* 星空背景 */
@@ -48,20 +61,21 @@
         }
 
         @keyframes twinkle {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
         }
 
-        /* 头部导航 */
+        /* 头部导航 - 移动端优化 */
         header {
-            background: rgba(26, 26, 46, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 1rem 2rem;
+            background: rgba(15, 15, 26, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 0.8rem 1rem;
             position: fixed;
             width: 100%;
             top: 0;
             z-index: 1000;
-            border-bottom: 1px solid rgba(245, 166, 35, 0.2);
+            border-bottom: 1px solid rgba(245, 166, 35, 0.15);
         }
 
         nav {
@@ -73,41 +87,55 @@
         }
 
         .logo {
-            font-size: 1.8rem;
+            font-size: 1.3rem;
             font-weight: bold;
             background: linear-gradient(135deg, var(--gold), var(--purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.3rem;
+            white-space: nowrap;
         }
 
         .logo::before {
             content: "🔮";
+            -webkit-text-fill-color: initial;
+            font-size: 1.4rem;
         }
 
         .nav-links {
             display: flex;
-            gap: 2rem;
+            gap: 0.8rem;
             align-items: center;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
 
-        .nav-links a {
+        .nav-links::-webkit-scrollbar { display: none; }
+
+        .nav-links a, .nav-links button {
             color: var(--text);
             text-decoration: none;
-            transition: color 0.3s;
-            cursor: pointer;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            background: none;
+            border: none;
+            padding: 0.4rem 0.6rem;
+            border-radius: 20px;
+            transition: all 0.3s;
         }
 
-        .nav-links a:hover {
+        .nav-links a:hover, .nav-links a.active {
             color: var(--gold);
+            background: rgba(245, 166, 35, 0.1);
         }
 
         .user-info {
             display: none;
             align-items: center;
-            gap: 1rem;
+            gap: 0.5rem;
         }
 
         .user-info.active {
@@ -115,203 +143,316 @@
         }
 
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--purple), var(--accent));
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .user-name {
+            font-size: 0.85rem;
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* 主要内容区 */
         main {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 6rem 2rem 2rem;
+            padding: 4.5rem 1rem 2rem;
         }
 
         /* 英雄区域 */
         .hero {
             text-align: center;
-            padding: 3rem 0;
-            margin-bottom: 3rem;
+            padding: 2rem 0 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
         .hero h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            font-size: clamp(1.8rem, 6vw, 3rem);
+            margin-bottom: 0.8rem;
             background: linear-gradient(135deg, var(--gold), #fff, var(--purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            line-height: 1.3;
         }
 
         .hero p {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.7);
-            max-width: 600px;
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            color: var(--text-dim);
+            max-width: 500px;
             margin: 0 auto;
+            line-height: 1.6;
+            padding: 0 1rem;
         }
 
-        /* 功能卡片网格 */
+        /* 功能卡片网格 - 移动端2列 */
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .feature-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1.5rem;
+            }
         }
 
         .feature-card {
             background: var(--glass);
-            border: 1px solid rgba(245, 166, 35, 0.2);
-            border-radius: 20px;
-            padding: 2rem;
+            border: 1px solid rgba(245, 166, 35, 0.15);
+            border-radius: 16px;
+            padding: 1.2rem 0.8rem;
             text-align: center;
             transition: transform 0.3s, box-shadow 0.3s;
             cursor: pointer;
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 40px rgba(245, 166, 35, 0.2);
+        .feature-card:active {
+            transform: scale(0.96);
+        }
+
+        @media (min-width: 768px) {
+            .feature-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 40px rgba(245, 166, 35, 0.2);
+            }
         }
 
         .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
         }
 
         .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
             color: var(--gold);
         }
 
-        /* 牌阵选择区域 */
-        .spread-section {
+        .feature-card p {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            line-height: 1.4;
             display: none;
-            margin-bottom: 3rem;
         }
 
-        .spread-section.active {
+        @media (min-width: 768px) {
+            .feature-card p { display: block; font-size: 0.9rem; }
+            .feature-card { padding: 2rem 1.5rem; }
+            .feature-icon { font-size: 3rem; }
+            .feature-card h3 { font-size: 1.3rem; }
+        }
+
+        /* 页面区块 */
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
             display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .section-title {
-            font-size: 2rem;
+            font-size: clamp(1.3rem, 4vw, 2rem);
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             color: var(--gold);
         }
 
+        /* 牌阵选择 */
         .spread-options {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .spread-options {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 1rem;
+            }
         }
 
         .spread-option {
             background: var(--glass);
             border: 2px solid transparent;
-            border-radius: 15px;
-            padding: 1.5rem;
+            border-radius: 12px;
+            padding: 1rem 0.8rem;
             cursor: pointer;
             transition: all 0.3s;
             text-align: center;
         }
 
-        .spread-option:hover, .spread-option.selected {
+        .spread-option:active {
+            transform: scale(0.95);
+        }
+
+        .spread-option.selected {
             border-color: var(--gold);
             background: rgba(245, 166, 35, 0.1);
         }
 
         .spread-option h4 {
             color: var(--gold);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
+            font-size: 1rem;
         }
 
-        /* 塔罗牌网格 */
+        .spread-option p {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* 塔罗牌网格 - 移动端优化 */
         .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 1rem;
-            margin: 2rem 0;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.6rem;
+            margin: 1.5rem 0;
+            max-height: 60vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .cards-grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 1rem;
+                max-height: none;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .cards-grid {
+                grid-template-columns: repeat(8, 1fr);
+            }
         }
 
         .tarot-card {
-            aspect-ratio: 2/3;
-            border-radius: 10px;
+            aspect-ratio: 2/3.5;
+            border-radius: 8px;
             overflow: hidden;
             cursor: pointer;
-            transition: transform 0.3s;
+            transition: transform 0.2s;
             position: relative;
             border: 2px solid transparent;
+            background: linear-gradient(135deg, #2a0845, #6441A5);
         }
 
-        .tarot-card:hover {
-            transform: scale(1.05);
+        .tarot-card:active {
+            transform: scale(0.95);
         }
 
         .tarot-card.selected {
             border-color: var(--gold);
-            box-shadow: 0 0 20px rgba(245, 166, 35, 0.5);
+            box-shadow: 0 0 15px rgba(245, 166, 35, 0.5);
         }
 
         .tarot-card img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            display: block;
         }
 
-        .card-back {
+        .tarot-card .card-fallback {
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #2a0845, #6441A5);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            border-radius: 10px;
+            padding: 0.3rem;
+            text-align: center;
+            background: linear-gradient(135deg, #1a0a2e, #3d1a5c);
+        }
+
+        .tarot-card .card-fallback .suit-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .tarot-card .card-fallback .card-name {
+            font-size: 0.65rem;
+            color: var(--gold);
+            line-height: 1.2;
+        }
+
+        @media (min-width: 768px) {
+            .tarot-card .card-fallback .suit-icon { font-size: 2rem; }
+            .tarot-card .card-fallback .card-name { font-size: 0.8rem; }
         }
 
         /* 拍照上传区域 */
         .camera-section {
-            display: none;
             text-align: center;
-            padding: 2rem;
+            padding: 1.5rem 1rem;
             background: var(--glass);
-            border-radius: 20px;
-            margin-bottom: 2rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(245, 166, 35, 0.15);
         }
 
-        .camera-section.active {
-            display: block;
-        }
-
-        #video, #canvas {
+        #video, #canvas, #uploadPreview {
             max-width: 100%;
+            width: 100%;
+            max-height: 50vh;
             border-radius: 10px;
             margin: 1rem 0;
+            object-fit: contain;
+            background: rgba(0,0,0,0.3);
         }
 
+        .camera-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        /* 按钮样式 - 移动端优化 */
         .btn {
             background: linear-gradient(135deg, var(--purple), var(--accent));
             color: white;
             border: none;
-            padding: 0.8rem 2rem;
+            padding: 0.7rem 1.5rem;
             border-radius: 25px;
             cursor: pointer;
-            font-size: 1rem;
-            transition: transform 0.3s, box-shadow 0.3s;
-            margin: 0.5rem;
+            font-size: 0.9rem;
+            transition: transform 0.2s, box-shadow 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            min-height: 44px;
+            -webkit-appearance: none;
         }
 
-        .btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+        .btn:active {
+            transform: scale(0.96);
         }
 
         .btn-secondary {
@@ -320,55 +461,88 @@
             color: var(--gold);
         }
 
-        .btn-secondary:hover {
-            background: rgba(245, 166, 35, 0.1);
+        .btn-small {
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            min-height: 36px;
         }
 
         /* 解读结果 */
         .reading-result {
             display: none;
             background: var(--glass);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-top: 2rem;
+            border-radius: 16px;
+            padding: 1.5rem 1rem;
+            margin-top: 1.5rem;
             border: 1px solid rgba(245, 166, 35, 0.3);
         }
 
         .reading-result.active {
             display: block;
+            animation: fadeIn 0.5s;
         }
 
         .reading-cards {
             display: flex;
             justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.5rem;
         }
 
         .reading-card-display {
             text-align: center;
-            max-width: 200px;
+            width: 100px;
+            flex-shrink: 0;
         }
 
-        .reading-card-display img {
+        @media (min-width: 768px) {
+            .reading-card-display { width: 150px; }
+        }
+
+        .reading-card-display img, .reading-card-display .card-fallback {
             width: 100%;
-            border-radius: 10px;
+            aspect-ratio: 2/3.5;
+            border-radius: 8px;
             margin-bottom: 0.5rem;
+            object-fit: cover;
+            background: linear-gradient(135deg, #1a0a2e, #3d1a5c);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .reading-card-display h4 {
+            font-size: 0.85rem;
+            color: var(--gold);
+        }
+
+        .reading-card-display .pos {
+            font-size: 0.75rem;
+            color: var(--text-dim);
         }
 
         .reading-text {
             line-height: 1.8;
-            font-size: 1.1rem;
-            text-align: justify;
+            font-size: 0.95rem;
         }
 
         .reading-text h3 {
             color: var(--gold);
-            margin: 1.5rem 0 0.5rem;
+            margin: 1.2rem 0 0.5rem;
+            font-size: 1.1rem;
         }
 
-        /* 登录模态框 */
+        .reading-text p {
+            color: var(--text-dim);
+            margin-bottom: 0.8rem;
+        }
+
+        /* 模态框 - 移动端全屏 */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -376,10 +550,11 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 2000;
             justify-content: center;
-            align-items: center;
+            align-items: flex-end;
+            backdrop-filter: blur(5px);
         }
 
         .modal-overlay.active {
@@ -388,18 +563,36 @@
 
         .modal {
             background: var(--secondary);
-            border-radius: 20px;
-            padding: 2rem;
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
+            width: 100%;
             max-width: 500px;
-            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
             border: 1px solid var(--gold);
-            position: relative;
+            border-bottom: none;
+            animation: slideUp 0.3s ease;
+        }
+
+        @media (min-width: 768px) {
+            .modal-overlay { align-items: center; }
+            .modal {
+                border-radius: 20px;
+                border: 1px solid var(--gold);
+                animation: fadeIn 0.3s;
+            }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
         }
 
         .modal h2 {
             text-align: center;
             color: var(--gold);
             margin-bottom: 1.5rem;
+            font-size: 1.3rem;
         }
 
         .form-group {
@@ -408,18 +601,21 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 0.5rem;
-            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 0.4rem;
+            color: var(--text-dim);
+            font-size: 0.9rem;
         }
 
         .form-group input, .form-group select {
             width: 100%;
-            padding: 0.8rem;
+            padding: 0.9rem;
             border: 1px solid rgba(245, 166, 35, 0.3);
             background: rgba(255, 255, 255, 0.05);
             color: var(--text);
-            border-radius: 10px;
+            border-radius: 12px;
             outline: none;
+            font-size: 1rem;
+            min-height: 44px;
         }
 
         .form-group input:focus {
@@ -435,71 +631,78 @@
             color: var(--text);
             font-size: 1.5rem;
             cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* 历史记录 */
-        .history-section {
-            display: none;
-            margin-bottom: 3rem;
-        }
-
-        .history-section.active {
-            display: block;
-        }
-
         .history-list {
             display: grid;
-            gap: 1rem;
+            gap: 0.8rem;
         }
 
         .history-item {
             background: var(--glass);
-            border-radius: 15px;
-            padding: 1.5rem;
-            border-left: 4px solid var(--gold);
+            border-radius: 12px;
+            padding: 1rem;
+            border-left: 3px solid var(--gold);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 0.5rem;
         }
 
         .history-item .date {
             color: var(--gold);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+        }
+
+        .history-item .cards {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-top: 0.3rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 200px;
+        }
+
+        @media (min-width: 768px) {
+            .history-item .cards { max-width: 400px; }
         }
 
         /* 数据统计 */
-        .stats-section {
-            display: none;
-            margin-bottom: 3rem;
-        }
-
-        .stats-section.active {
-            display: block;
-        }
-
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(4, 1fr); }
         }
 
         .stat-card {
             background: var(--glass);
-            border-radius: 15px;
-            padding: 1.5rem;
+            border-radius: 12px;
+            padding: 1.2rem;
             text-align: center;
             border: 1px solid rgba(245, 166, 35, 0.2);
         }
 
         .stat-number {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: bold;
             color: var(--gold);
         }
 
         .stat-label {
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 0.5rem;
+            color: var(--text-dim);
+            margin-top: 0.3rem;
+            font-size: 0.85rem;
         }
 
         /* 资料收集界面 */
@@ -513,6 +716,7 @@
             background: var(--primary);
             z-index: 3000;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .profile-setup.active {
@@ -520,9 +724,9 @@
         }
 
         .profile-content {
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 3rem 2rem;
+            padding: 2rem 1rem;
         }
 
         .profile-step {
@@ -534,49 +738,60 @@
             display: block;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         .major-arcana-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 1rem;
-            margin: 2rem 0;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+        }
+
+        @media (min-width: 768px) {
+            .major-arcana-grid { grid-template-columns: repeat(4, 1fr); }
         }
 
         .spirit-card {
             cursor: pointer;
-            transition: transform 0.3s;
+            transition: transform 0.2s;
             text-align: center;
+            background: var(--glass);
+            border-radius: 10px;
+            padding: 0.5rem;
+            border: 2px solid transparent;
         }
 
-        .spirit-card:hover {
-            transform: scale(1.1);
+        .spirit-card:active {
+            transform: scale(0.95);
         }
 
         .spirit-card.selected {
-            box-shadow: 0 0 20px var(--gold);
-            border-radius: 10px;
+            border-color: var(--gold);
+            box-shadow: 0 0 15px rgba(245, 166, 35, 0.3);
         }
 
-        .spirit-card img {
+        .spirit-card img, .spirit-card .card-fallback {
             width: 100%;
-            border-radius: 10px;
+            aspect-ratio: 2/3.5;
+            border-radius: 6px;
+            object-fit: cover;
+            background: linear-gradient(135deg, #1a0a2e, #3d1a5c);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .spirit-card p {
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
+            margin-top: 0.4rem;
+            font-size: 0.75rem;
+            color: var(--gold);
         }
 
         /* 性格分析结果 */
         .personality-result {
             background: var(--glass);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-top: 2rem;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
             border: 2px solid var(--gold);
         }
 
@@ -588,18 +803,11 @@
         }
 
         .trait-tag {
-            background: rgba(245, 166, 35, 0.2);
+            background: rgba(245, 166, 35, 0.15);
             color: var(--gold);
-            padding: 0.3rem 1rem;
+            padding: 0.3rem 0.8rem;
             border-radius: 20px;
-            font-size: 0.9rem;
-        }
-
-        /* 响应式 */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2rem; }
-            .nav-links { gap: 1rem; font-size: 0.9rem; }
-            .feature-grid { grid-template-columns: 1fr; }
+            font-size: 0.85rem;
         }
 
         /* 加载动画 */
@@ -614,9 +822,9 @@
         }
 
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(245, 166, 35, 0.3);
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(245, 166, 35, 0.2);
             border-top-color: var(--gold);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -632,9 +840,11 @@
             display: none;
             justify-content: center;
             align-items: center;
-            min-height: 400px;
-            margin: 2rem 0;
+            min-height: 300px;
+            margin: 1rem 0;
             position: relative;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .spread-display.active {
@@ -644,35 +854,142 @@
         .spread-positions {
             position: relative;
             width: 100%;
-            max-width: 800px;
-            height: 500px;
+            max-width: 600px;
+            height: 350px;
+            min-width: 300px;
         }
 
         .spread-slot {
             position: absolute;
-            width: 120px;
-            height: 180px;
+            width: 70px;
+            height: 120px;
             border: 2px dashed rgba(245, 166, 35, 0.3);
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
+            background: rgba(0,0,0,0.2);
+        }
+
+        @media (min-width: 768px) {
+            .spread-slot { width: 100px; height: 170px; }
         }
 
         .spread-slot.filled {
             border-style: solid;
             border-color: var(--gold);
+            background: transparent;
+        }
+
+        .spread-slot img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
         }
 
         .spread-slot .slot-label {
             position: absolute;
-            bottom: -30px;
+            bottom: -25px;
             left: 50%;
             transform: translateX(-50%);
             white-space: nowrap;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: var(--gold);
+        }
+
+        /* 底部操作栏 */
+        .action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 15, 26, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 0.8rem 1rem;
+            border-top: 1px solid rgba(245, 166, 35, 0.15);
+            display: none;
+            justify-content: center;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .action-bar.active {
+            display: flex;
+        }
+
+        /* 提示消息 */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: var(--gold);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            z-index: 5000;
+            display: none;
+            text-align: center;
+            max-width: 80%;
+            border: 1px solid rgba(245, 166, 35, 0.3);
+        }
+
+        .toast.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        /* 隐藏滚动条但保持功能 */
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-dim);
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* 步骤指示器 */
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(245, 166, 35, 0.3);
+            transition: all 0.3s;
+        }
+
+        .step-dot.active {
+            background: var(--gold);
+            width: 30px;
+            border-radius: 5px;
+        }
+
+        /* 图片加载错误处理 */
+        img {
+            background: linear-gradient(135deg, #1a0a2e, #3d1a5c);
+        }
+
+        img[src=""], img:not([src]) {
+            visibility: hidden;
         }
     </style>
 </head>
@@ -682,69 +999,69 @@
     <header>
         <nav>
             <div class="logo">星辰塔罗</div>
-            <div class="nav-links">
-                <a onclick="showSection('home')">首页</a>
-                <a onclick="showSection('read')">开始测算</a>
-                <a onclick="showSection('history')">历史记录</a>
-                <a onclick="showSection('stats')">数据统计</a>
+            <div class="nav-links hide-scrollbar">
+                <a onclick="showPage('home')" id="nav-home" class="active">首页</a>
+                <a onclick="showPage('read')" id="nav-read">测算</a>
+                <a onclick="showPage('history')" id="nav-history">记录</a>
+                <a onclick="showPage('stats')" id="nav-stats">数据</a>
                 <div class="user-info" id="userInfo">
                     <div class="avatar" id="userAvatar">?</div>
-                    <span id="userName">访客</span>
-                    <button class="btn btn-secondary" onclick="logout()">退出</button>
+                    <span class="user-name" id="userName">访客</span>
                 </div>
-                <button class="btn" id="loginBtn" onclick="showLogin()">登录</button>
+                <button class="btn btn-small" id="loginBtn" onclick="showLogin()">登录</button>
             </div>
         </nav>
     </header>
 
     <main>
         <!-- 首页 -->
-        <section id="home" class="active-section">
+        <section id="home" class="page-section active">
             <div class="hero">
                 <h1>探索命运的奥秘</h1>
-                <p>通过古老的塔罗智慧，解读你内心的声音，指引未来的方向</p>
+                <p>通过古老的塔罗智慧，解读内心的声音，指引未来的方向</p>
             </div>
 
             <div class="feature-grid">
                 <div class="feature-card" onclick="startReading('camera')">
                     <div class="feature-icon">📷</div>
                     <h3>拍照解读</h3>
-                    <p>拍摄你的塔罗牌阵，AI智能识别并给出专业解读</p>
+                    <p>拍摄牌阵，AI识别解读</p>
                 </div>
                 <div class="feature-card" onclick="startReading('spread')">
                     <div class="feature-icon">🃏</div>
                     <h3>牌阵测算</h3>
-                    <p>选择经典牌阵，在线抽牌获得深度解析</p>
+                    <p>经典牌阵深度解析</p>
                 </div>
                 <div class="feature-card" onclick="startReading('single')">
                     <div class="feature-icon">⭐</div>
                     <h3>单牌占卜</h3>
-                    <p>每日一牌，获取当下的能量指引</p>
+                    <p>每日能量指引</p>
                 </div>
-                <div class="feature-card" onclick="showSection('history')">
+                <div class="feature-card" onclick="showPage('history')">
                     <div class="feature-icon">📊</div>
                     <h3>记录追踪</h3>
-                    <p>保存每次测算，追踪你的灵性成长轨迹</p>
+                    <p>保存测算历史</p>
                 </div>
             </div>
         </section>
 
         <!-- 测算区域 -->
-        <section id="read" class="spread-section">
+        <section id="read" class="page-section">
             <h2 class="section-title">选择测算方式</h2>
             
             <!-- 拍照上传 -->
-            <div class="camera-section" id="cameraSection">
-                <h3>拍摄你的牌阵</h3>
-                <video id="video" autoplay playsinline></video>
+            <div class="camera-section" id="cameraSection" style="display:none;">
+                <h3 style="color:var(--gold);margin-bottom:1rem;">📷 拍摄你的牌阵</h3>
+                <video id="video" autoplay playsinline muted></video>
                 <canvas id="canvas" style="display:none;"></canvas>
-                <div>
-                    <button class="btn" onclick="startCamera()">开启相机</button>
-                    <button class="btn" onclick="capturePhoto()">拍照</button>
-                    <button class="btn btn-secondary" onclick="uploadImage()">上传图片</button>
+                <img id="uploadPreview" style="display:none;" alt="预览">
+                <div class="camera-controls">
+                    <button class="btn" onclick="startCamera()">📹 开启相机</button>
+                    <button class="btn" onclick="capturePhoto()">📸 拍照</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">🖼️ 相册</button>
                     <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleFileSelect(event)">
                 </div>
-                <div id="photoResult"></div>
+                <div id="photoResult" style="margin-top:1rem;"></div>
             </div>
 
             <!-- 牌阵选择 -->
@@ -752,19 +1069,19 @@
                 <div class="spread-options">
                     <div class="spread-option" onclick="selectSpread('single')">
                         <h4>单牌占卜</h4>
-                        <p>一张牌回答一个具体问题</p>
+                        <p>一张牌回答</p>
                     </div>
                     <div class="spread-option" onclick="selectSpread('three')">
                         <h4>三张牌阵</h4>
-                        <p>过去 - 现在 - 未来</p>
+                        <p>过去-现在-未来</p>
                     </div>
                     <div class="spread-option" onclick="selectSpread('celtic')">
                         <h4>凯尔特十字</h4>
-                        <p>深度解析当前状况</p>
+                        <p>深度解析</p>
                     </div>
                     <div class="spread-option" onclick="selectSpread('relationship')">
                         <h4>关系牌阵</h4>
-                        <p>解读人际关系动态</p>
+                        <p>人际动态</p>
                     </div>
                 </div>
 
@@ -772,13 +1089,14 @@
                     <div class="spread-positions" id="spreadPositions"></div>
                 </div>
 
-                <div id="cardSelection">
-                    <h3 style="text-align:center; margin:2rem 0; color:var(--gold)">从78张牌中选择</h3>
-                    <div class="cards-grid" id="cardsGrid"></div>
-                    <div style="text-align:center; margin-top:2rem;">
-                        <button class="btn" onclick="drawRandomCards()">随机抽牌</button>
-                        <button class="btn btn-secondary" onclick="confirmSelection()">确认选择</button>
+                <div id="cardSelection" style="display:none;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin:1rem 0;">
+                        <h3 style="color:var(--gold);font-size:1rem;">选择牌面 <span id="cardCount" style="color:var(--text-dim);font-size:0.8rem;"></span></h3>
+                        <div>
+                            <button class="btn btn-small btn-secondary" onclick="drawRandomCards()">🎲 随机</button>
+                        </div>
                     </div>
+                    <div class="cards-grid" id="cardsGrid"></div>
                 </div>
             </div>
 
@@ -788,46 +1106,53 @@
             </div>
 
             <div class="reading-result" id="readingResult">
-                <h2 style="text-align:center; color:var(--gold); margin-bottom:2rem;">解读结果</h2>
+                <h2 style="text-align:center; color:var(--gold); margin-bottom:1.5rem;">解读结果</h2>
                 <div class="reading-cards" id="readingCards"></div>
                 <div class="reading-text" id="readingText"></div>
-                <div style="text-align:center; margin-top:2rem;">
-                    <button class="btn" onclick="saveReading()">保存记录</button>
-                    <button class="btn btn-secondary" onclick="shareReading()">分享</button>
-                </div>
             </div>
         </section>
 
         <!-- 历史记录 -->
-        <section id="history" class="history-section">
+        <section id="history" class="page-section">
             <h2 class="section-title">测算历史</h2>
-            <div class="history-list" id="historyList"></div>
+            <div class="history-list" id="historyList">
+                <div class="empty-state">
+                    <div class="icon">📜</div>
+                    <p>暂无记录</p>
+                </div>
+            </div>
         </section>
 
         <!-- 数据统计 -->
-        <section id="stats" class="stats-section">
+        <section id="stats" class="page-section">
             <h2 class="section-title">月度数据报告</h2>
             <div class="stats-grid" id="statsGrid"></div>
-            <div id="statsChart" style="margin-top:2rem; height:300px; background:var(--glass); border-radius:15px; padding:1rem;"></div>
+            <div id="statsChart" style="margin-top:1.5rem; min-height:250px; background:var(--glass); border-radius:12px; padding:1rem;"></div>
         </section>
     </main>
 
+    <!-- 底部操作栏 -->
+    <div class="action-bar" id="actionBar">
+        <button class="btn btn-secondary" onclick="resetReading()">↺ 重置</button>
+        <button class="btn" onclick="confirmSelection()">✓ 确认选牌</button>
+    </div>
+
     <!-- 登录模态框 -->
     <div class="modal-overlay" id="loginModal">
-        <div class="modal">
+        <div class="modal" style="position:relative;">
             <button class="close-btn" onclick="closeLogin()">×</button>
-            <h2>登录 / 注册</h2>
+            <h2>🔮 登录 / 注册</h2>
             <div class="form-group">
                 <label>用户名</label>
-                <input type="text" id="loginUsername" placeholder="请输入用户名">
+                <input type="text" id="loginUsername" placeholder="请输入用户名" autocomplete="username">
             </div>
             <div class="form-group">
                 <label>密码</label>
-                <input type="password" id="loginPassword" placeholder="请输入密码">
+                <input type="password" id="loginPassword" placeholder="请输入密码" autocomplete="current-password">
             </div>
             <div style="text-align:center; margin-top:1.5rem;">
                 <button class="btn" onclick="login()" style="width:100%;">登录</button>
-                <p style="margin-top:1rem; color:rgba(255,255,255,0.5);">还没有账号？<a href="#" style="color:var(--gold);">立即注册</a></p>
+                <p style="margin-top:1rem; color:var(--text-dim); font-size:0.85rem;">首次登录自动注册</p>
             </div>
         </div>
     </div>
@@ -835,9 +1160,15 @@
     <!-- 资料收集界面 -->
     <div class="profile-setup" id="profileSetup">
         <div class="profile-content">
+            <div class="step-indicator" id="stepIndicator">
+                <div class="step-dot active"></div>
+                <div class="step-dot"></div>
+                <div class="step-dot"></div>
+            </div>
+
             <div class="profile-step active" id="step1">
-                <h2 style="text-align:center; color:var(--gold); margin-bottom:2rem;">欢迎加入星辰塔罗</h2>
-                <p style="text-align:center; margin-bottom:2rem;">为了给你提供更精准的解读，请完善你的资料</p>
+                <h2 style="text-align:center; color:var(--gold); margin-bottom:1rem;">欢迎加入星辰塔罗</h2>
+                <p style="text-align:center; margin-bottom:2rem; color:var(--text-dim); font-size:0.9rem;">完善资料，获取精准解读</p>
                 
                 <div class="form-group">
                     <label>你的性别</label>
@@ -850,24 +1181,24 @@
                 </div>
                 
                 <div style="text-align:center; margin-top:2rem;">
-                    <button class="btn" onclick="nextStep()">下一步</button>
+                    <button class="btn" onclick="nextStep()" style="width:100%;">下一步</button>
                 </div>
             </div>
 
             <div class="profile-step" id="step2">
-                <h2 style="text-align:center; color:var(--gold); margin-bottom:1rem;">选择你的牌灵</h2>
-                <p style="text-align:center; margin-bottom:2rem; color:rgba(255,255,255,0.7);">在大阿卡纳中选择一张与你最有感应的牌作为你的守护牌灵</p>
+                <h2 style="text-align:center; color:var(--gold); margin-bottom:0.5rem;">选择你的牌灵</h2>
+                <p style="text-align:center; margin-bottom:1.5rem; color:var(--text-dim); font-size:0.85rem;">选择一张与你最有感应的大阿卡纳牌</p>
                 
                 <div class="major-arcana-grid" id="majorArcanaGrid"></div>
                 
-                <div style="text-align:center; margin-top:2rem;">
-                    <button class="btn btn-secondary" onclick="prevStep()">上一步</button>
-                    <button class="btn" onclick="nextStep()">下一步</button>
+                <div style="text-align:center; margin-top:2rem; display:flex; gap:1rem;">
+                    <button class="btn btn-secondary" onclick="prevStep()" style="flex:1;">上一步</button>
+                    <button class="btn" onclick="nextStep()" style="flex:1;">下一步</button>
                 </div>
             </div>
 
             <div class="profile-step" id="step3">
-                <h2 style="text-align:center; color:var(--gold); margin-bottom:2rem;">性格分析</h2>
+                <h2 style="text-align:center; color:var(--gold); margin-bottom:1rem;">性格分析</h2>
                 <div class="loading" id="personalityLoading" style="display:block;">
                     <div class="spinner"></div>
                     <p>正在通过塔罗计算你的性格特质...</p>
@@ -879,173 +1210,206 @@
                         <div id="personalityContent"></div>
                     </div>
                     <div style="text-align:center; margin-top:2rem;">
-                        <button class="btn" onclick="completeSetup()">进入星辰塔罗</button>
+                        <button class="btn" onclick="completeSetup()" style="width:100%;">✨ 进入星辰塔罗</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
     <script>
-        // 塔罗牌数据 - 78张完整牌组
+        // ============ 塔罗牌数据 ============
+        // 使用可靠的图片源 - rawpixel 公共领域 + sacret-texts
+        const IMG_BASE = 'https://www.sacred-texts.com/tarot/pkt/img/';
+        
         const tarotData = {
             major: [
-                { id: 0, name: "愚者", nameEn: "The Fool", image: "https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_00_Fool.jpg", meaning: "新的开始，冒险，天真，自发性", personality: "自由奔放，充满好奇心，勇于尝试新事物" },
-                { id: 1, name: "魔术师", nameEn: "The Magician", image: "https://upload.wikimedia.org/wikipedia/commons/d/de/RWS_Tarot_01_Magician.jpg", meaning: "创造力，意志力，显化，能力", personality: "富有创造力，善于沟通，具有领导才能" },
-                { id: 2, name: "女祭司", nameEn: "The High Priestess", image: "https://upload.wikimedia.org/wikipedia/commons/8/88/RWS_Tarot_02_High_Priestess.jpg", meaning: "直觉，神秘，内在智慧，潜意识", personality: "直觉敏锐，喜欢独处，富有神秘感" },
-                { id: 3, name: "皇后", nameEn: "The Empress", image: "https://upload.wikimedia.org/wikipedia/commons/d/d2/RWS_Tarot_03_Empress.jpg", meaning: "丰饶，母性，自然，创造力", personality: "温暖慈爱，富有同情心，享受生活" },
-                { id: 4, name: "皇帝", nameEn: "The Emperor", image: "https://upload.wikimedia.org/wikipedia/commons/c/c3/RWS_Tarot_04_Emperor.jpg", meaning: "权威，结构，父性，控制", personality: "有责任感，追求稳定，天生的领导者" },
-                { id: 5, name: "教皇", nameEn: "The Hierophant", image: "https://upload.wikimedia.org/wikipedia/commons/8/8d/RWS_Tarot_05_Hierophant.jpg", meaning: "传统，信仰，教育，指导", personality: "尊重传统，重视道德，喜欢帮助他人" },
-                { id: 6, name: "恋人", nameEn: "The Lovers", image: "https://upload.wikimedia.org/wikipedia/commons/3/3a/TheLovers.jpg", meaning: "爱情，和谐，选择，价值观", personality: "浪漫多情，重视关系，善于协调" },
-                { id: 7, name: "战车", nameEn: "The Chariot", image: "https://upload.wikimedia.org/wikipedia/commons/9/9b/RWS_Tarot_07_Chariot.jpg", meaning: "意志力，胜利，决心，控制", personality: "意志坚定，目标明确，不畏艰难" },
-                { id: 8, name: "力量", nameEn: "Strength", image: "https://upload.wikimedia.org/wikipedia/commons/f/f5/RWS_Tarot_08_Strength.jpg", meaning: "勇气，耐心，内在力量，同情心", personality: "内心强大，温柔而坚定，善于驯服困难" },
-                { id: 9, name: "隐者", nameEn: "The Hermit", image: "https://upload.wikimedia.org/wikipedia/commons/4/4d/RWS_Tarot_09_Hermit.jpg", meaning: "内省，孤独，指引，寻求真理", personality: "深思熟虑，喜欢独处，追求真理" },
-                { id: 10, name: "命运之轮", nameEn: "Wheel of Fortune", image: "https://upload.wikimedia.org/wikipedia/commons/3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg", meaning: "变化，周期，命运，转折点", personality: "适应力强，相信命运，乐观面对变化" },
-                { id: 11, name: "正义", nameEn: "Justice", image: "https://upload.wikimedia.org/wikipedia/commons/e/e0/RWS_Tarot_11_Justice.jpg", meaning: "公正，真理，因果，平衡", personality: "追求公正，理性客观，重视诚信" },
-                { id: 12, name: "倒吊人", nameEn: "The Hanged Man", image: "https://upload.wikimedia.org/wikipedia/commons/2/2b/RWS_Tarot_12_Hanged_Man.jpg", meaning: "牺牲，新视角，等待，放手", personality: "愿意牺牲，换个角度看问题，有耐心" },
-                { id: 13, name: "死神", nameEn: "Death", image: "https://upload.wikimedia.org/wikipedia/commons/d/d7/RWS_Tarot_13_Death.jpg", meaning: "结束，转变，新生，释放", personality: "善于结束旧事物，拥抱变化，有重生能力" },
-                { id: 14, name: "节制", nameEn: "Temperance", image: "https://upload.wikimedia.org/wikipedia/commons/f/f8/RWS_Tarot_14_Temperance.jpg", meaning: "平衡，调和，耐心，适度", personality: "追求平衡，善于调和，性格温和" },
-                { id: 15, name: "恶魔", nameEn: "The Devil", image: "https://upload.wikimedia.org/wikipedia/commons/5/55/RWS_Tarot_15_Devil.jpg", meaning: "束缚，物质主义，诱惑，阴影", personality: "有魅力，重视物质，善于掌控" },
-                { id: 16, name: "塔", nameEn: "The Tower", image: "https://upload.wikimedia.org/wikipedia/commons/5/53/RWS_Tarot_16_Tower.jpg", meaning: "突变，觉醒，破坏，启示", personality: "经历突变后觉醒，有破坏重建能力" },
-                { id: 17, name: "星星", nameEn: "The Star", image: "https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_17_Star.jpg", meaning: "希望，灵感，宁静，指引", personality: "充满希望，富有灵感，给人指引" },
-                { id: 18, name: "月亮", nameEn: "The Moon", image: "https://upload.wikimedia.org/wikipedia/commons/7/7f/RWS_Tarot_18_Moon.jpg", meaning: "幻觉，恐惧，潜意识，直觉", personality: "直觉敏锐，富有想象力，情感丰富" },
-                { id: 19, name: "太阳", nameEn: "The Sun", image: "https://upload.wikimedia.org/wikipedia/commons/1/17/RWS_Tarot_19_Sun.jpg", meaning: "快乐，成功，活力，真理", personality: "阳光开朗，充满活力，积极向上" },
-                { id: 20, name: "审判", nameEn: "Judgement", image: "https://upload.wikimedia.org/wikipedia/commons/d/dd/RWS_Tarot_20_Judgement.jpg", meaning: "重生，内在呼唤，宽恕，觉醒", personality: "有使命感，善于反思，追求觉醒" },
-                { id: 21, name: "世界", nameEn: "The World", image: "https://upload.wikimedia.org/wikipedia/commons/f/ff/RWS_Tarot_21_World.jpg", meaning: "完成，整合，成就，圆满", personality: "追求完美，善于整合，有成就感" }
+                { id: 0, name: "愚者", nameEn: "The Fool", image: IMG_BASE + "ar00.jpg", suit: 'major', num: 0, meaning: "新的开始，冒险，天真，自发性", personality: "自由奔放，充满好奇心，勇于尝试新事物" },
+                { id: 1, name: "魔术师", nameEn: "The Magician", image: IMG_BASE + "ar01.jpg", suit: 'major', num: 1, meaning: "创造力，意志力，显化，能力", personality: "富有创造力，善于沟通，具有领导才能" },
+                { id: 2, name: "女祭司", nameEn: "The High Priestess", image: IMG_BASE + "ar02.jpg", suit: 'major', num: 2, meaning: "直觉，神秘，内在智慧，潜意识", personality: "直觉敏锐，喜欢独处，富有神秘感" },
+                { id: 3, name: "皇后", nameEn: "The Empress", image: IMG_BASE + "ar03.jpg", suit: 'major', num: 3, meaning: "丰饶，母性，自然，创造力", personality: "温暖慈爱，富有同情心，享受生活" },
+                { id: 4, name: "皇帝", nameEn: "The Emperor", image: IMG_BASE + "ar04.jpg", suit: 'major', num: 4, meaning: "权威，结构，父性，控制", personality: "有责任感，追求稳定，天生的领导者" },
+                { id: 5, name: "教皇", nameEn: "The Hierophant", image: IMG_BASE + "ar05.jpg", suit: 'major', num: 5, meaning: "传统，信仰，教育，指导", personality: "尊重传统，重视道德，喜欢帮助他人" },
+                { id: 6, name: "恋人", nameEn: "The Lovers", image: IMG_BASE + "ar06.jpg", suit: 'major', num: 6, meaning: "爱情，和谐，选择，价值观", personality: "浪漫多情，重视关系，善于协调" },
+                { id: 7, name: "战车", nameEn: "The Chariot", image: IMG_BASE + "ar07.jpg", suit: 'major', num: 7, meaning: "意志力，胜利，决心，控制", personality: "意志坚定，目标明确，不畏艰难" },
+                { id: 8, name: "力量", nameEn: "Strength", image: IMG_BASE + "ar08.jpg", suit: 'major', num: 8, meaning: "勇气，耐心，内在力量，同情心", personality: "内心强大，温柔而坚定，善于驯服困难" },
+                { id: 9, name: "隐者", nameEn: "The Hermit", image: IMG_BASE + "ar09.jpg", suit: 'major', num: 9, meaning: "内省，孤独，指引，寻求真理", personality: "深思熟虑，喜欢独处，追求真理" },
+                { id: 10, name: "命运之轮", nameEn: "Wheel of Fortune", image: IMG_BASE + "ar10.jpg", suit: 'major', num: 10, meaning: "变化，周期，命运，转折点", personality: "适应力强，相信命运，乐观面对变化" },
+                { id: 11, name: "正义", nameEn: "Justice", image: IMG_BASE + "ar11.jpg", suit: 'major', num: 11, meaning: "公正，真理，因果，平衡", personality: "追求公正，理性客观，重视诚信" },
+                { id: 12, name: "倒吊人", nameEn: "The Hanged Man", image: IMG_BASE + "ar12.jpg", suit: 'major', num: 12, meaning: "牺牲，新视角，等待，放手", personality: "愿意牺牲，换个角度看问题，有耐心" },
+                { id: 13, name: "死神", nameEn: "Death", image: IMG_BASE + "ar13.jpg", suit: 'major', num: 13, meaning: "结束，转变，新生，释放", personality: "善于结束旧事物，拥抱变化，有重生能力" },
+                { id: 14, name: "节制", nameEn: "Temperance", image: IMG_BASE + "ar14.jpg", suit: 'major', num: 14, meaning: "平衡，调和，耐心，适度", personality: "追求平衡，善于调和，性格温和" },
+                { id: 15, name: "恶魔", nameEn: "The Devil", image: IMG_BASE + "ar15.jpg", suit: 'major', num: 15, meaning: "束缚，物质主义，诱惑，阴影", personality: "有魅力，重视物质，善于掌控" },
+                { id: 16, name: "塔", nameEn: "The Tower", image: IMG_BASE + "ar16.jpg", suit: 'major', num: 16, meaning: "突变，觉醒，破坏，启示", personality: "经历突变后觉醒，有破坏重建能力" },
+                { id: 17, name: "星星", nameEn: "The Star", image: IMG_BASE + "ar17.jpg", suit: 'major', num: 17, meaning: "希望，灵感，宁静，指引", personality: "充满希望，富有灵感，给人指引" },
+                { id: 18, name: "月亮", nameEn: "The Moon", image: IMG_BASE + "ar18.jpg", suit: 'major', num: 18, meaning: "幻觉，恐惧，潜意识，直觉", personality: "直觉敏锐，富有想象力，情感丰富" },
+                { id: 19, name: "太阳", nameEn: "The Sun", image: IMG_BASE + "ar19.jpg", suit: 'major', num: 19, meaning: "快乐，成功，活力，真理", personality: "阳光开朗，充满活力，积极向上" },
+                { id: 20, name: "审判", nameEn: "Judgement", image: IMG_BASE + "ar20.jpg", suit: 'major', num: 20, meaning: "重生，内在呼唤，宽恕，觉醒", personality: "有使命感，善于反思，追求觉醒" },
+                { id: 21, name: "世界", nameEn: "The World", image: IMG_BASE + "ar21.jpg", suit: 'major', num: 21, meaning: "完成，整合，成就，圆满", personality: "追求完美，善于整合，有成就感" }
             ],
             minor: {
                 wands: [
-                    { id: 'w1', name: "权杖首牌", image: "https://upload.wikimedia.org/wikipedia/commons/1/11/Wands01.jpg", meaning: "创意，灵感，新机会" },
-                    { id: 'w2', name: "权杖二", image: "https://upload.wikimedia.org/wikipedia/commons/0/0f/Wands02.jpg", meaning: "规划，决策，未来" },
-                    { id: 'w3', name: "权杖三", image: "https://upload.wikimedia.org/wikipedia/commons/f/ff/Wands03.jpg", meaning: "远见，扩展，准备" },
-                    { id: 'w4', name: "权杖四", image: "https://upload.wikimedia.org/wikipedia/commons/a/a4/Wands04.jpg", meaning: "庆祝，和谐，回家" },
-                    { id: 'w5', name: "权杖五", image: "https://upload.wikimedia.org/wikipedia/commons/9/9d/Wands05.jpg", meaning: "冲突，竞争，挑战" },
-                    { id: 'w6', name: "权杖六", image: "https://upload.wikimedia.org/wikipedia/commons/3/3b/Wands06.jpg", meaning: "胜利，认可，好消息" },
-                    { id: 'w7', name: "权杖七", image: "https://upload.wikimedia.org/wikipedia/commons/e/e4/Wands07.jpg", meaning: "防御，坚持，勇气" },
-                    { id: 'w8', name: "权杖八", image: "https://upload.wikimedia.org/wikipedia/commons/6/6b/Wands08.jpg", meaning: "速度，行动，进展" },
-                    { id: 'w9', name: "权杖九", image: "https://upload.wikimedia.org/wikipedia/commons/9/9e/Wands09.jpg", meaning: "韧性，准备，警觉" },
-                    { id: 'w10', name: "权杖十", image: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Wands10.jpg", meaning: "负担，责任，压力" },
-                    { id: 'w11', name: "权杖侍从", image: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Wands11.jpg", meaning: "探索，新想法，热情" },
-                    { id: 'w12', name: "权杖骑士", image: "https://upload.wikimedia.org/wikipedia/commons/1/16/Wands12.jpg", meaning: "冒险，冲动，活力" },
-                    { id: 'w13', name: "权杖皇后", image: "https://upload.wikimedia.org/wikipedia/commons/0/0d/Wands13.jpg", meaning: "自信，热情，魅力" },
-                    { id: 'w14', name: "权杖国王", image: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Wands14.jpg", meaning: "领导力，远见，创业" }
+                    { id: 'w01', name: "权杖首牌", image: IMG_BASE + "wa01.jpg", suit: 'wands', num: 1, meaning: "创意，灵感，新机会" },
+                    { id: 'w02', name: "权杖二", image: IMG_BASE + "wa02.jpg", suit: 'wands', num: 2, meaning: "规划，决策，未来" },
+                    { id: 'w03', name: "权杖三", image: IMG_BASE + "wa03.jpg", suit: 'wands', num: 3, meaning: "远见，扩展，准备" },
+                    { id: 'w04', name: "权杖四", image: IMG_BASE + "wa04.jpg", suit: 'wands', num: 4, meaning: "庆祝，和谐，回家" },
+                    { id: 'w05', name: "权杖五", image: IMG_BASE + "wa05.jpg", suit: 'wands', num: 5, meaning: "冲突，竞争，挑战" },
+                    { id: 'w06', name: "权杖六", image: IMG_BASE + "wa06.jpg", suit: 'wands', num: 6, meaning: "胜利，认可，好消息" },
+                    { id: 'w07', name: "权杖七", image: IMG_BASE + "wa07.jpg", suit: 'wands', num: 7, meaning: "防御，坚持，勇气" },
+                    { id: 'w08', name: "权杖八", image: IMG_BASE + "wa08.jpg", suit: 'wands', num: 8, meaning: "速度，行动，进展" },
+                    { id: 'w09', name: "权杖九", image: IMG_BASE + "wa09.jpg", suit: 'wands', num: 9, meaning: "韧性，准备，警觉" },
+                    { id: 'w10', name: "权杖十", image: IMG_BASE + "wa10.jpg", suit: 'wands', num: 10, meaning: "负担，责任，压力" },
+                    { id: 'w11', name: "权杖侍从", image: IMG_BASE + "wapa.jpg", suit: 'wands', num: 11, meaning: "探索，新想法，热情" },
+                    { id: 'w12', name: "权杖骑士", image: IMG_BASE + "wakn.jpg", suit: 'wands', num: 12, meaning: "冒险，冲动，活力" },
+                    { id: 'w13', name: "权杖皇后", image: IMG_BASE + "waqu.jpg", suit: 'wands', num: 13, meaning: "自信，热情，魅力" },
+                    { id: 'w14', name: "权杖国王", image: IMG_BASE + "waki.jpg", suit: 'wands', num: 14, meaning: "领导力，远见，创业" }
                 ],
                 cups: [
-                    { id: 'c1', name: "圣杯首牌", image: "https://upload.wikimedia.org/wikipedia/commons/3/36/Cups01.jpg", meaning: "爱，情感，直觉" },
-                    { id: 'c2', name: "圣杯二", image: "https://upload.wikimedia.org/wikipedia/commons/f/f8/Cups02.jpg", meaning: "合作，和谐，吸引" },
-                    { id: 'c3', name: "圣杯三", image: "https://upload.wikimedia.org/wikipedia/commons/7/7a/Cups03.jpg", meaning: "庆祝，友谊，社交" },
-                    { id: 'c4', name: "圣杯四", image: "https://upload.wikimedia.org/wikipedia/commons/3/35/Cups04.jpg", meaning: "沉思，不满，重新评估" },
-                    { id: 'c5', name: "圣杯五", image: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Cups05.jpg", meaning: "失落，悲伤，失望" },
-                    { id: 'c6', name: "圣杯六", image: "https://upload.wikimedia.org/wikipedia/commons/1/17/Cups06.jpg", meaning: "怀旧，童年，回忆" },
-                    { id: 'c7', name: "圣杯七", image: "https://upload.wikimedia.org/wikipedia/commons/f/f6/Cups07.jpg", meaning: "选择，幻想，梦想" },
-                    { id: 'c8', name: "圣杯八", image: "https://upload.wikimedia.org/wikipedia/commons/5/5a/Cups08.jpg", meaning: "离开，放弃，寻求更多" },
-                    { id: 'c9', name: "圣杯九", image: "https://upload.wikimedia.org/wikipedia/commons/2/24/Cups09.jpg", meaning: "满足，愿望实现，满足" },
-                    { id: 'c10', name: "圣杯十", image: "https://upload.wikimedia.org/wikipedia/commons/8/84/Cups10.jpg", meaning: "幸福，家庭，和谐" },
-                    { id: 'c11', name: "圣杯侍从", image: "https://upload.wikimedia.org/wikipedia/commons/a/ad/Cups11.jpg", meaning: "创意，直觉，敏感" },
-                    { id: 'c12', name: "圣杯骑士", image: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Cups12.jpg", meaning: "浪漫，魅力，追求" },
-                    { id: 'c13', name: "圣杯皇后", image: "https://upload.wikimedia.org/wikipedia/commons/6/62/Cups13.jpg", meaning: "同情，情感，直觉" },
-                    { id: 'c14', name: "圣杯国王", image: "https://upload.wikimedia.org/wikipedia/commons/0/04/Cups14.jpg", meaning: "情感控制，智慧，外交" }
+                    { id: 'c01', name: "圣杯首牌", image: IMG_BASE + "cu01.jpg", suit: 'cups', num: 1, meaning: "爱，情感，直觉" },
+                    { id: 'c02', name: "圣杯二", image: IMG_BASE + "cu02.jpg", suit: 'cups', num: 2, meaning: "合作，和谐，吸引" },
+                    { id: 'c03', name: "圣杯三", image: IMG_BASE + "cu03.jpg", suit: 'cups', num: 3, meaning: "庆祝，友谊，社交" },
+                    { id: 'c04', name: "圣杯四", image: IMG_BASE + "cu04.jpg", suit: 'cups', num: 4, meaning: "沉思，不满，重新评估" },
+                    { id: 'c05', name: "圣杯五", image: IMG_BASE + "cu05.jpg", suit: 'cups', num: 5, meaning: "失落，悲伤，失望" },
+                    { id: 'c06', name: "圣杯六", image: IMG_BASE + "cu06.jpg", suit: 'cups', num: 6, meaning: "怀旧，童年，回忆" },
+                    { id: 'c07', name: "圣杯七", image: IMG_BASE + "cu07.jpg", suit: 'cups', num: 7, meaning: "选择，幻想，梦想" },
+                    { id: 'c08', name: "圣杯八", image: IMG_BASE + "cu08.jpg", suit: 'cups', num: 8, meaning: "离开，放弃，寻求更多" },
+                    { id: 'c09', name: "圣杯九", image: IMG_BASE + "cu09.jpg", suit: 'cups', num: 9, meaning: "满足，愿望实现" },
+                    { id: 'c10', name: "圣杯十", image: IMG_BASE + "cu10.jpg", suit: 'cups', num: 10, meaning: "幸福，家庭，和谐" },
+                    { id: 'c11', name: "圣杯侍从", image: IMG_BASE + "cupa.jpg", suit: 'cups', num: 11, meaning: "创意，直觉，敏感" },
+                    { id: 'c12', name: "圣杯骑士", image: IMG_BASE + "cukn.jpg", suit: 'cups', num: 12, meaning: "浪漫，魅力，追求" },
+                    { id: 'c13', name: "圣杯皇后", image: IMG_BASE + "cuqu.jpg", suit: 'cups', num: 13, meaning: "同情，情感，直觉" },
+                    { id: 'c14', name: "圣杯国王", image: IMG_BASE + "cuki.jpg", suit: 'cups', num: 14, meaning: "情感控制，智慧，外交" }
                 ],
                 swords: [
-                    { id: 's1', name: "宝剑首牌", image: "https://upload.wikimedia.org/wikipedia/commons/1/1a/Swords01.jpg", meaning: "清晰，突破，新想法" },
-                    { id: 's2', name: "宝剑二", image: "https://upload.wikimedia.org/wikipedia/commons/9/9e/Swords02.jpg", meaning: "僵局，回避，选择" },
-                    { id: 's3', name: "宝剑三", image: "https://upload.wikimedia.org/wikipedia/commons/0/02/Swords03.jpg", meaning: "心碎，悲伤，痛苦" },
-                    { id: 's4', name: "宝剑四", image: "https://upload.wikimedia.org/wikipedia/commons/b/bf/Swords04.jpg", meaning: "休息，恢复，沉思" },
-                    { id: 's5', name: "宝剑五", image: "https://upload.wikimedia.org/wikipedia/commons/2/23/Swords05.jpg", meaning: "冲突，失败，胜利" },
-                    { id: 's6', name: "宝剑六", image: "https://upload.wikimedia.org/wikipedia/commons/2/29/Swords06.jpg", meaning: "过渡，移动，疗愈" },
-                    { id: 's7', name: "宝剑七", image: "https://upload.wikimedia.org/wikipedia/commons/3/34/Swords07.jpg", meaning: "欺骗，策略，偷窃" },
-                    { id: 's8', name: "宝剑八", image: "https://upload.wikimedia.org/wikipedia/commons/a/a7/Swords08.jpg", meaning: "限制，束缚，无助" },
-                    { id: 's9', name: "宝剑九", image: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Swords09.jpg", meaning: "焦虑，噩梦，担忧" },
-                    { id: 's10', name: "宝剑十", image: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Swords10.jpg", meaning: "痛苦结束，危机，结束" },
-                    { id: 's11', name: "宝剑侍从", image: "https://upload.wikimedia.org/wikipedia/commons/4/46/Swords11.jpg", meaning: "好奇，沟通，警觉" },
-                    { id: 's12', name: "宝剑骑士", image: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Swords12.jpg", meaning: "行动，冲动，激进" },
-                    { id: 's13', name: "宝剑皇后", image: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Swords13.jpg", meaning: "独立，清晰，公正" },
-                    { id: 's14', name: "宝剑国王", image: "https://upload.wikimedia.org/wikipedia/commons/3/33/Swords14.jpg", meaning: "权威，真理，智力" }
+                    { id: 's01', name: "宝剑首牌", image: IMG_BASE + "sw01.jpg", suit: 'swords', num: 1, meaning: "清晰，突破，新想法" },
+                    { id: 's02', name: "宝剑二", image: IMG_BASE + "sw02.jpg", suit: 'swords', num: 2, meaning: "僵局，回避，选择" },
+                    { id: 's03', name: "宝剑三", image: IMG_BASE + "sw03.jpg", suit: 'swords', num: 3, meaning: "心碎，悲伤，痛苦" },
+                    { id: 's04', name: "宝剑四", image: IMG_BASE + "sw04.jpg", suit: 'swords', num: 4, meaning: "休息，恢复，沉思" },
+                    { id: 's05', name: "宝剑五", image: IMG_BASE + "sw05.jpg", suit: 'swords', num: 5, meaning: "冲突，失败，胜利" },
+                    { id: 's06', name: "宝剑六", image: IMG_BASE + "sw06.jpg", suit: 'swords', num: 6, meaning: "过渡，移动，疗愈" },
+                    { id: 's07', name: "宝剑七", image: IMG_BASE + "sw07.jpg", suit: 'swords', num: 7, meaning: "欺骗，策略，偷窃" },
+                    { id: 's08', name: "宝剑八", image: IMG_BASE + "sw08.jpg", suit: 'swords', num: 8, meaning: "限制，束缚，无助" },
+                    { id: 's09', name: "宝剑九", image: IMG_BASE + "sw09.jpg", suit: 'swords', num: 9, meaning: "焦虑，噩梦，担忧" },
+                    { id: 's10', name: "宝剑十", image: IMG_BASE + "sw10.jpg", suit: 'swords', num: 10, meaning: "痛苦结束，危机" },
+                    { id: 's11', name: "宝剑侍从", image: IMG_BASE + "swpa.jpg", suit: 'swords', num: 11, meaning: "好奇，沟通，警觉" },
+                    { id: 's12', name: "宝剑骑士", image: IMG_BASE + "swkn.jpg", suit: 'swords', num: 12, meaning: "行动，冲动，激进" },
+                    { id: 's13', name: "宝剑皇后", image: IMG_BASE + "swqu.jpg", suit: 'swords', num: 13, meaning: "独立，清晰，公正" },
+                    { id: 's14', name: "宝剑国王", image: IMG_BASE + "swki.jpg", suit: 'swords', num: 14, meaning: "权威，真理，智力" }
                 ],
                 pentacles: [
-                    { id: 'p1', name: "星币首牌", image: "https://upload.wikimedia.org/wikipedia/commons/f/fd/Pents01.jpg", meaning: "物质机会，繁荣，显现" },
-                    { id: 'p2', name: "星币二", image: "https://upload.wikimedia.org/wikipedia/commons/9/9f/Pents02.jpg", meaning: "平衡，适应，时间管理" },
-                    { id: 'p3', name: "星币三", image: "https://upload.wikimedia.org/wikipedia/commons/4/42/Pents03.jpg", meaning: "团队合作，技能，工艺" },
-                    { id: 'p4', name: "星币四", image: "https://upload.wikimedia.org/wikipedia/commons/3/35/Pents04.jpg", meaning: "控制，稳定，占有欲" },
-                    { id: 'p5', name: "星币五", image: "https://upload.wikimedia.org/wikipedia/commons/9/96/Pents05.jpg", meaning: "困难，损失，孤立" },
-                    { id: 'p6', name: "星币六", image: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Pents06.jpg", meaning: "慷慨，给予，接受" },
-                    { id: 'p7', name: "星币七", image: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Pents07.jpg", meaning: "评估，耐心，投资" },
-                    { id: 'p8', name: "星币八", image: "https://upload.wikimedia.org/wikipedia/commons/4/49/Pents08.jpg", meaning: "技能，勤奋，专注" },
-                    { id: 'p9', name: "星币九", image: "https://upload.wikimedia.org/wikipedia/commons/f/f0/Pents09.jpg", meaning: "独立，奢侈，自给自足" },
-                    { id: 'p10', name: "星币十", image: "https://upload.wikimedia.org/wikipedia/commons/4/44/Pents10.jpg", meaning: "财富，遗产，家庭" },
-                    { id: 'p11', name: "星币侍从", image: "https://upload.wikimedia.org/wikipedia/commons/6/6a/Pents11.jpg", meaning: "学习，实践，机会" },
-                    { id: 'p12', name: "星币骑士", image: "https://upload.wikimedia.org/wikipedia/commons/1/11/Pents12.jpg", meaning: "勤奋，可靠，保守" },
-                    { id: 'p13', name: "星币皇后", image: "https://upload.wikimedia.org/wikipedia/commons/8/88/Pents13.jpg", meaning: "养育，实用，丰饶" },
-                    { id: 'p14', name: "星币国王", image: "https://upload.wikimedia.org/wikipedia/commons/1/1c/Pents14.jpg", meaning: "成功，领导力，财富" }
+                    { id: 'p01', name: "星币首牌", image: IMG_BASE + "pe01.jpg", suit: 'pentacles', num: 1, meaning: "物质机会，繁荣" },
+                    { id: 'p02', name: "星币二", image: IMG_BASE + "pe02.jpg", suit: 'pentacles', num: 2, meaning: "平衡，适应，时间管理" },
+                    { id: 'p03', name: "星币三", image: IMG_BASE + "pe03.jpg", suit: 'pentacles', num: 3, meaning: "团队合作，技能，工艺" },
+                    { id: 'p04', name: "星币四", image: IMG_BASE + "pe04.jpg", suit: 'pentacles', num: 4, meaning: "控制，稳定，占有欲" },
+                    { id: 'p05', name: "星币五", image: IMG_BASE + "pe05.jpg", suit: 'pentacles', num: 5, meaning: "困难，损失，孤立" },
+                    { id: 'p06', name: "星币六", image: IMG_BASE + "pe06.jpg", suit: 'pentacles', num: 6, meaning: "慷慨，给予，接受" },
+                    { id: 'p07', name: "星币七", image: IMG_BASE + "pe07.jpg", suit: 'pentacles', num: 7, meaning: "评估，耐心，投资" },
+                    { id: 'p08', name: "星币八", image: IMG_BASE + "pe08.jpg", suit: 'pentacles', num: 8, meaning: "技能，勤奋，专注" },
+                    { id: 'p09', name: "星币九", image: IMG_BASE + "pe09.jpg", suit: 'pentacles', num: 9, meaning: "独立，奢侈，自给自足" },
+                    { id: 'p10', name: "星币十", image: IMG_BASE + "pe10.jpg", suit: 'pentacles', num: 10, meaning: "财富，遗产，家庭" },
+                    { id: 'p11', name: "星币侍从", image: IMG_BASE + "pepa.jpg", suit: 'pentacles', num: 11, meaning: "学习，实践，机会" },
+                    { id: 'p12', name: "星币骑士", image: IMG_BASE + "pekn.jpg", suit: 'pentacles', num: 12, meaning: "勤奋，可靠，保守" },
+                    { id: 'p13', name: "星币皇后", image: IMG_BASE + "pequ.jpg", suit: 'pentacles', num: 13, meaning: "养育，实用，丰饶" },
+                    { id: 'p14', name: "星币国王", image: IMG_BASE + "peki.jpg", suit: 'pentacles', num: 14, meaning: "成功，领导力，财富" }
                 ]
             }
         };
 
-        // 全局状态
+        const suitIcons = {
+            major: '✨',
+            wands: '🔥',
+            cups: '💧',
+            swords: '⚔️',
+            pentacles: '💰'
+        };
+
+        // ============ 全局状态 ============
         let currentUser = null;
         let selectedSpread = null;
         let selectedCards = [];
         let currentReading = null;
         let userProfile = {};
         let readings = JSON.parse(localStorage.getItem('tarotReadings') || '[]');
+        let currentStep = 1;
+        let selectedSpirit = null;
+        let allCards = [];
 
-        // 初始化
+        // ============ 初始化 ============
         document.addEventListener('DOMContentLoaded', () => {
             createStars();
+            initAllCards();
             initCardsGrid();
             initMajorArcanaGrid();
             checkLoginStatus();
+            
+            // 防止iOS橡皮筋效果
+            document.body.addEventListener('touchmove', function(e) {
+                if (e.target.closest('.cards-grid') || e.target.closest('.modal')) return;
+            }, { passive: true });
         });
 
-        // 创建星空背景
+        function initAllCards() {
+            allCards = [...tarotData.major, ...Object.values(tarotData.minor).flat()];
+        }
+
         function createStars() {
             const container = document.getElementById('starsBg');
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 60; i++) {
                 const star = document.createElement('div');
                 star.className = 'star';
                 star.style.left = Math.random() * 100 + '%';
                 star.style.top = Math.random() * 100 + '%';
-                star.style.width = Math.random() * 3 + 'px';
-                star.style.height = star.style.width;
+                const size = Math.random() * 2 + 1;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
                 star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
                 container.appendChild(star);
             }
         }
 
-        // 初始化牌组网格
+        function createCardHTML(card, small) {
+            const icon = suitIcons[card.suit] || '✨';
+            return `
+                <div class="card-fallback">
+                    <span class="suit-icon">${icon}</span>
+                    <span class="card-name">${card.name}</span>
+                </div>
+            `;
+        }
+
         function initCardsGrid() {
             const grid = document.getElementById('cardsGrid');
             grid.innerHTML = '';
             
-            // 大阿卡纳
-            tarotData.major.forEach(card => {
+            allCards.forEach(card => {
                 const div = document.createElement('div');
                 div.className = 'tarot-card';
-                div.innerHTML = `<img src="${card.image}" alt="${card.name}" loading="lazy">`;
+                div.dataset.id = card.id;
+                div.innerHTML = `
+                    <img src="${card.image}" alt="${card.name}" loading="lazy" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="card-fallback" style="display:none;">${createCardHTML(card, true)}</div>
+                `;
                 div.onclick = () => selectCard(card, div);
                 grid.appendChild(div);
             });
-            
-            // 小阿卡纳
-            Object.values(tarotData.minor).forEach(suit => {
-                suit.forEach(card => {
-                    const div = document.createElement('div');
-                    div.className = 'tarot-card';
-                    div.innerHTML = `<img src="${card.image}" alt="${card.name}" loading="lazy">`;
-                    div.onclick = () => selectCard(card, div);
-                    grid.appendChild(div);
-                });
-            });
         }
 
-        // 初始化大阿卡纳网格（牌灵选择）
         function initMajorArcanaGrid() {
             const grid = document.getElementById('majorArcanaGrid');
+            grid.innerHTML = '';
             tarotData.major.forEach(card => {
                 const div = document.createElement('div');
                 div.className = 'spirit-card';
+                div.dataset.id = card.id;
                 div.innerHTML = `
-                    <img src="${card.image}" alt="${card.name}">
+                    <img src="${card.image}" alt="${card.name}" loading="lazy"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="card-fallback" style="display:none;position:absolute;inset:0;">${createCardHTML(card, true)}</div>
                     <p>${card.name}</p>
                 `;
                 div.onclick = () => selectSpiritCard(card, div);
@@ -1053,51 +1417,59 @@
             });
         }
 
-        // 页面导航
-        function showSection(section) {
-            document.querySelectorAll('section').forEach(s => s.classList.remove('active-section'));
-            document.querySelectorAll('.spread-section, .history-section, .stats-section').forEach(s => s.classList.remove('active'));
+        // ============ 页面导航 ============
+        function showPage(page) {
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
             
-            if (section === 'home') {
-                document.getElementById('home').style.display = 'block';
-            } else if (section === 'read') {
-                document.getElementById('read').classList.add('active');
-                document.getElementById('home').style.display = 'none';
-            } else if (section === 'history') {
+            document.getElementById(page).classList.add('active');
+            const nav = document.getElementById('nav-' + page);
+            if (nav) nav.classList.add('active');
+            
+            if (page === 'history') {
                 if (!currentUser) { showLogin(); return; }
-                document.getElementById('history').classList.add('active');
-                document.getElementById('home').style.display = 'none';
                 loadHistory();
-            } else if (section === 'stats') {
+            } else if (page === 'stats') {
                 if (!currentUser) { showLogin(); return; }
-                document.getElementById('stats').classList.add('active');
-                document.getElementById('home').style.display = 'none';
                 loadStats();
             }
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // 开始测算
+        // ============ 测算功能 ============
         function startReading(type) {
-            if (!currentUser) {
-                showLogin();
-                return;
-            }
+            if (!currentUser) { showLogin(); return; }
             
-            showSection('read');
-            document.getElementById('cameraSection').classList.remove('active');
-            document.getElementById('spreadSelect').style.display = 'block';
-            document.getElementById('readingResult').classList.remove('active');
-            document.getElementById('cardSelection').style.display = 'none';
-            document.getElementById('spreadDisplay').classList.remove('active');
-            selectedCards = [];
+            showPage('read');
+            resetReading();
             
             if (type === 'camera') {
-                document.getElementById('cameraSection').classList.add('active');
+                document.getElementById('cameraSection').style.display = 'block';
                 document.getElementById('spreadSelect').style.display = 'none';
+            } else {
+                document.getElementById('cameraSection').style.display = 'none';
+                document.getElementById('spreadSelect').style.display = 'block';
+                if (type === 'single') selectSpread('single');
             }
         }
 
-        // 选择牌阵
+        function resetReading() {
+            selectedSpread = null;
+            selectedCards = [];
+            currentReading = null;
+            document.getElementById('readingResult').classList.remove('active');
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('cardSelection').style.display = 'none';
+            document.getElementById('spreadDisplay').classList.remove('active');
+            document.getElementById('spreadPositions').innerHTML = '';
+            document.querySelectorAll('.spread-option').forEach(o => o.classList.remove('selected'));
+            document.querySelectorAll('.tarot-card').forEach(c => c.classList.remove('selected'));
+            document.getElementById('actionBar').classList.remove('active');
+            document.getElementById('photoResult').innerHTML = '';
+            document.getElementById('uploadPreview').style.display = 'none';
+        }
+
         function selectSpread(spread) {
             selectedSpread = spread;
             document.querySelectorAll('.spread-option').forEach(o => o.classList.remove('selected'));
@@ -1117,21 +1489,21 @@
                 ],
                 celtic: [
                     { x: 30, y: 50, label: '现状' },
-                    { x: 30, y: 30, label: '挑战' },
+                    { x: 30, y: 25, label: '挑战' },
                     { x: 50, y: 50, label: '基础' },
-                    { x: 30, y: 70, label: '过去' },
+                    { x: 30, y: 75, label: '过去' },
                     { x: 70, y: 50, label: '目标' },
-                    { x: 50, y: 30, label: '未来' },
-                    { x: 50, y: 70, label: '自我' },
-                    { x: 70, y: 30, label: '环境' },
-                    { x: 70, y: 70, label: '希望' },
-                    { x: 85, y: 50, label: '结果' }
+                    { x: 50, y: 25, label: '未来' },
+                    { x: 50, y: 75, label: '自我' },
+                    { x: 70, y: 25, label: '环境' },
+                    { x: 70, y: 75, label: '希望' },
+                    { x: 88, y: 50, label: '结果' }
                 ],
                 relationship: [
-                    { x: 30, y: 40, label: '你' },
-                    { x: 70, y: 40, label: '对方' },
-                    { x: 50, y: 20, label: '关系' },
-                    { x: 50, y: 60, label: '基础' },
+                    { x: 25, y: 35, label: '你' },
+                    { x: 75, y: 35, label: '对方' },
+                    { x: 50, y: 15, label: '关系' },
+                    { x: 50, y: 55, label: '基础' },
                     { x: 50, y: 80, label: '未来' }
                 ]
             };
@@ -1148,11 +1520,11 @@
             });
             
             document.getElementById('cardSelection').style.display = 'block';
+            updateCardCount();
         }
 
-        // 选择单张牌
         function selectCard(card, element) {
-            const maxCards = selectedSpread === 'single' ? 1 : selectedSpread === 'three' ? 3 : selectedSpread === 'relationship' ? 5 : 10;
+            const maxCards = getMaxCards();
             
             if (element.classList.contains('selected')) {
                 element.classList.remove('selected');
@@ -1161,44 +1533,57 @@
                 element.classList.add('selected');
                 selectedCards.push(card);
             } else {
-                alert(`该牌阵需要${maxCards}张牌`);
+                showToast(`该牌阵需要${maxCards}张牌`);
                 return;
             }
             
             updateSpreadDisplay();
+            updateCardCount();
+            
+            if (selectedCards.length === maxCards) {
+                document.getElementById('actionBar').classList.add('active');
+            } else {
+                document.getElementById('actionBar').classList.remove('active');
+            }
         }
 
-        // 随机抽牌
+        function getMaxCards() {
+            return { single: 1, three: 3, celtic: 10, relationship: 5 }[selectedSpread] || 1;
+        }
+
+        function updateCardCount() {
+            const max = getMaxCards();
+            document.getElementById('cardCount').textContent = `(${selectedCards.length}/${max})`;
+        }
+
         function drawRandomCards() {
-            const maxCards = selectedSpread === 'single' ? 1 : selectedSpread === 'three' ? 3 : selectedSpread === 'relationship' ? 5 : 10;
-            const allCards = [...tarotData.major, ...Object.values(tarotData.minor).flat()];
+            const maxCards = getMaxCards();
             selectedCards = [];
             
-            // 随机选择
             const shuffled = [...allCards].sort(() => Math.random() - 0.5);
             selectedCards = shuffled.slice(0, maxCards);
             
-            // 更新UI
-            document.querySelectorAll('.tarot-card').forEach(el => el.classList.remove('selected'));
-            selectedCards.forEach(card => {
-                const cards = document.querySelectorAll('.tarot-card');
-                cards.forEach(el => {
-                    if (el.querySelector('img')?.alt === card.name) {
-                        el.classList.add('selected');
-                    }
-                });
+            document.querySelectorAll('.tarot-card').forEach(el => {
+                el.classList.remove('selected');
+                const cardId = el.dataset.id;
+                if (selectedCards.find(c => c.id == cardId || c.id === cardId)) {
+                    el.classList.add('selected');
+                }
             });
             
             updateSpreadDisplay();
+            updateCardCount();
+            document.getElementById('actionBar').classList.add('active');
         }
 
-        // 更新牌阵显示
         function updateSpreadDisplay() {
             const slots = document.querySelectorAll('.spread-slot');
             slots.forEach((slot, i) => {
                 if (selectedCards[i]) {
+                    const card = selectedCards[i];
                     slot.innerHTML = `
-                        <img src="${selectedCards[i].image}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                        <img src="${card.image}" alt="${card.name}" onerror="this.style.display='none'">
+                        <div class="card-fallback" style="display:none;position:absolute;inset:0;">${createCardHTML(card, true)}</div>
                         <span class="slot-label">${slot.querySelector('.slot-label')?.textContent || ''}</span>
                     `;
                     slot.classList.add('filled');
@@ -1206,22 +1591,20 @@
             });
         }
 
-        // 确认选择并解读
         function confirmSelection() {
-            const maxCards = selectedSpread === 'single' ? 1 : selectedSpread === 'three' ? 3 : selectedSpread === 'relationship' ? 5 : 10;
+            const maxCards = getMaxCards();
             if (selectedCards.length < maxCards) {
-                alert(`请选择${maxCards}张牌`);
+                showToast(`请选择${maxCards}张牌`);
                 return;
             }
-            
             generateReading();
         }
 
-        // 生成解读
         function generateReading() {
             document.getElementById('loading').classList.add('active');
             document.getElementById('cardSelection').style.display = 'none';
             document.getElementById('spreadDisplay').classList.remove('active');
+            document.getElementById('actionBar').classList.remove('active');
             
             setTimeout(() => {
                 document.getElementById('loading').classList.remove('active');
@@ -1241,23 +1624,29 @@
                 
                 selectedCards.forEach((card, i) => {
                     const pos = positions[selectedSpread][i] || `位置${i+1}`;
+                    const icon = suitIcons[card.suit] || '✨';
                     readingCards.innerHTML += `
                         <div class="reading-card-display">
-                            <img src="${card.image}" alt="${card.name}">
+                            <img src="${card.image}" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="card-fallback" style="display:none;">${createCardHTML(card, true)}</div>
                             <h4>${card.name}</h4>
-                            <p style="color:var(--gold);font-size:0.9rem;">${pos}</p>
+                            <p class="pos">${pos}</p>
                         </div>
                     `;
                     
                     readingText += `
-                        <h3>${pos}：${card.name}</h3>
+                        <h3>${pos} · ${card.name}</h3>
                         <p>${card.meaning}。这张牌在${pos}位置显示，${getPositionInterpretation(pos, card)}</p>
                     `;
                 });
                 
                 readingText += `
-                    <h3>综合建议</h3>
+                    <h3>✨ 综合建议</h3>
                     <p>${generateAdvice(selectedCards)}</p>
+                    <div style="margin-top:1.5rem; text-align:center;">
+                        <button class="btn" onclick="saveReading()">💾 保存记录</button>
+                        <button class="btn btn-secondary" onclick="shareReading()">📤 分享</button>
+                    </div>
                 `;
                 
                 document.getElementById('readingText').innerHTML = readingText;
@@ -1272,80 +1661,98 @@
             }, 2000);
         }
 
-        // 位置解读
         function getPositionInterpretation(pos, card) {
             const interpretations = {
-                '过去': '暗示过去的经历为现在奠定了基础',
-                '现在': '代表你当前面临的状况和挑战',
-                '未来': '预示着即将到来的发展趋势',
-                '指引': '是宇宙给你的直接讯息',
-                '你': '代表你在这段关系中的状态和期望',
-                '对方': '显示对方的想法和感受',
-                '关系': '揭示你们之间的互动模式',
-                '现状': '反映你目前的处境',
-                '挑战': '指出需要克服的障碍'
+                '过去': '暗示过去的经历为现在奠定了基础，提醒你要从中学习。',
+                '现在': '代表你当前面临的状况和挑战，是行动的关键时刻。',
+                '未来': '预示着即将到来的发展趋势，做好准备迎接变化。',
+                '指引': '是宇宙给你的直接讯息，请用心感受。',
+                '你': '代表你在这段关系中的真实状态和深层期望。',
+                '对方': '显示对方的想法和感受，帮助你理解彼此。',
+                '关系': '揭示你们之间的互动模式和能量流动。',
+                '现状': '反映你目前的处境和周围环境的影响。',
+                '挑战': '指出需要克服的障碍，也是成长的契机。',
+                '基础': '代表问题的根基和潜在影响因素。',
+                '目标': '显示你的期望和前进的方向。',
+                '自我': '反映你的内在状态和自我认知。',
+                '环境': '揭示外部环境和他人对你的影响。',
+                '希望': '代表你的期望和恐惧，需要正视内心。',
+                '结果': '预示最终的走向，但命运始终掌握在你手中。'
             };
-            return interpretations[pos] || '具有重要的象征意义';
+            return interpretations[pos] || '具有重要的象征意义，请结合直觉理解。';
         }
 
-        // 生成建议
         function generateAdvice(cards) {
             const advice = [
-                "保持开放的心态，接受即将到来的变化。",
-                "相信你的直觉，它现在特别敏锐。",
-                "在行动之前，先花点时间反思。",
-                "这是展现你内在力量的时刻。",
-                "与他人保持真诚的沟通，会带来意想不到的收获。"
+                "保持开放的心态，接受即将到来的变化。每一次转折都是成长的机会。",
+                "相信你的直觉，它现在特别敏锐。静下心来，答案就在你心中。",
+                "在行动之前，先花点时间反思。清晰的头脑比匆忙的决定更有价值。",
+                "这是展现你内在力量的时刻。你已经拥有面对一切挑战的能力。",
+                "与他人保持真诚的沟通，会带来意想不到的收获。敞开心扉，让爱流动。",
+                "不要害怕结束，因为每一次结束都是新开始的序曲。拥抱变化，迎接新生。",
+                "平衡是关键。在工作与休息、付出与接受之间找到属于你的节奏。",
+                "你的创造力正处于高峰期。勇敢地表达你的想法，世界需要你的独特光芒。"
             ];
-            return advice[Math.floor(Math.random() * advice.length)];
+            // 基于牌面生成更个性化的建议
+            const cardNames = cards.map(c => c.name).join('');
+            const seed = cardNames.length % advice.length;
+            return advice[seed];
         }
 
-        // 保存记录
         function saveReading() {
             if (!currentUser || !currentReading) return;
-            
-            readings.push({
-                ...currentReading,
-                user: currentUser.username
-            });
+            readings.push({ ...currentReading, user: currentUser.username });
             localStorage.setItem('tarotReadings', JSON.stringify(readings));
-            alert('记录已保存！');
+            showToast('✓ 记录已保存');
         }
 
-        // 分享
         function shareReading() {
-            const text = `我在星辰塔罗进行了一次${selectedSpread === 'single' ? '单牌' : '牌阵'}测算，抽到了：${selectedCards.map(c => c.name).join('、')}。快来体验吧！`;
+            const spreadNames = { single: '单牌', three: '三张牌阵', celtic: '凯尔特十字', relationship: '关系牌阵' };
+            const text = `我在星辰塔罗进行了一次${spreadNames[selectedSpread]}测算，抽到了：${selectedCards.map(c => c.name).join('、')}。快来体验吧！🔮`;
             if (navigator.share) {
                 navigator.share({ title: '星辰塔罗解读', text: text });
             } else {
-                navigator.clipboard.writeText(text).then(() => alert('已复制到剪贴板'));
+                navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板'));
             }
         }
 
-        // 拍照功能
+        // ============ 拍照功能 ============
+        let videoStream = null;
+
         async function startCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                document.getElementById('video').srcObject = stream;
+                if (videoStream) {
+                    videoStream.getTracks().forEach(t => t.stop());
+                }
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+                });
+                videoStream = stream;
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                video.style.display = 'block';
+                showToast('📷 相机已开启');
             } catch (err) {
-                alert('无法访问相机，请使用上传功能');
+                showToast('无法访问相机，请使用相册上传');
+                console.error(err);
             }
         }
 
         function capturePhoto() {
             const video = document.getElementById('video');
+            if (!video.srcObject) { showToast('请先开启相机'); return; }
+            
             const canvas = document.getElementById('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
             canvas.getContext('2d').drawImage(video, 0, 0);
             
-            const photoResult = document.getElementById('photoResult');
-            photoResult.innerHTML = '<p style="margin-top:1rem;">照片已捕获，正在分析牌面...</p>';
+            const preview = document.getElementById('uploadPreview');
+            preview.src = canvas.toDataURL('image/jpeg', 0.8);
+            preview.style.display = 'block';
+            video.style.display = 'none';
             
-            setTimeout(() => {
-                photoResult.innerHTML += '<p style="color:var(--gold);">检测到牌阵！请手动选择对应的牌进行解读。</p>';
-                document.getElementById('spreadSelect').style.display = 'block';
-            }, 1500);
+            analyzePhoto();
         }
 
         function uploadImage() {
@@ -1354,22 +1761,30 @@
 
         function handleFileSelect(event) {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    document.getElementById('photoResult').innerHTML = `
-                        <img src="${e.target.result}" style="max-width:100%;margin-top:1rem;border-radius:10px;">
-                        <p style="margin-top:1rem;">图片已上传，正在分析...</p>
-                    `;
-                    setTimeout(() => {
-                        document.getElementById('spreadSelect').style.display = 'block';
-                    }, 1000);
-                };
-                reader.readAsDataURL(file);
-            }
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('uploadPreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                document.getElementById('video').style.display = 'none';
+                analyzePhoto();
+            };
+            reader.readAsDataURL(file);
         }
 
-        // 登录系统
+        function analyzePhoto() {
+            const photoResult = document.getElementById('photoResult');
+            photoResult.innerHTML = '<p style="color:var(--text-dim);">🔄 正在分析牌面...</p>';
+            
+            setTimeout(() => {
+                photoResult.innerHTML = '<p style="color:var(--gold);">✓ 检测到牌阵！请选择对应牌阵进行解读。</p>';
+                document.getElementById('spreadSelect').style.display = 'block';
+            }, 1500);
+        }
+
+        // ============ 登录系统 ============
         function showLogin() {
             document.getElementById('loginModal').classList.add('active');
         }
@@ -1379,25 +1794,25 @@
         }
 
         function login() {
-            const username = document.getElementById('loginUsername').value;
+            const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             
             if (!username || !password) {
-                alert('请输入用户名和密码');
+                showToast('请输入用户名和密码');
                 return;
             }
             
-            // 模拟登录
             currentUser = { username: username };
             localStorage.setItem('tarotUser', JSON.stringify(currentUser));
             
-            document.getElementById('loginModal').classList.remove('active');
+            closeLogin();
             updateUI();
             
-            // 检查是否需要完善资料
             const profile = localStorage.getItem('tarotProfile_' + username);
             if (!profile) {
-                showProfileSetup();
+                setTimeout(showProfileSetup, 300);
+            } else {
+                showToast(`欢迎回来，${username}！`);
             }
         }
 
@@ -1405,7 +1820,8 @@
             currentUser = null;
             localStorage.removeItem('tarotUser');
             updateUI();
-            showSection('home');
+            showPage('home');
+            showToast('已退出登录');
         }
 
         function checkLoginStatus() {
@@ -1431,29 +1847,40 @@
             }
         }
 
-        // 资料收集
+        // ============ 资料收集 ============
         function showProfileSetup() {
             document.getElementById('profileSetup').classList.add('active');
+            currentStep = 1;
+            updateStepIndicator();
+            showStep(1);
         }
 
-        let currentStep = 1;
-        let selectedSpirit = null;
+        function updateStepIndicator() {
+            document.querySelectorAll('.step-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i + 1 === currentStep);
+            });
+        }
+
+        function showStep(step) {
+            document.querySelectorAll('.profile-step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+        }
 
         function nextStep() {
             if (currentStep === 1) {
                 const gender = document.getElementById('gender').value;
-                if (!gender) { alert('请选择性别'); return; }
+                if (!gender) { showToast('请选择性别'); return; }
                 userProfile.gender = gender;
             }
             
             if (currentStep === 2 && !selectedSpirit) {
-                alert('请选择一张牌灵');
+                showToast('请选择一张牌灵');
                 return;
             }
             
-            document.getElementById(`step${currentStep}`).classList.remove('active');
             currentStep++;
-            document.getElementById(`step${currentStep}`).classList.add('active');
+            updateStepIndicator();
+            showStep(currentStep);
             
             if (currentStep === 3) {
                 generatePersonality();
@@ -1461,9 +1888,9 @@
         }
 
         function prevStep() {
-            document.getElementById(`step${currentStep}`).classList.remove('active');
             currentStep--;
-            document.getElementById(`step${currentStep}`).classList.add('active');
+            updateStepIndicator();
+            showStep(currentStep);
         }
 
         function selectSpiritCard(card, element) {
@@ -1479,51 +1906,60 @@
                 document.getElementById('personalityResult').style.display = 'block';
                 
                 const spirit = userProfile.spiritCard;
-                const gender = userProfile.gender === 'male' ? '先生' : userProfile.gender === 'female' ? '女士' : '';
+                const genderMap = { male: '先生', female: '女士', other: '' };
+                const gender = genderMap[userProfile.gender] || '';
                 
                 const traits = spirit.personality.split('，');
-                const extraTraits = ['直觉敏锐', '富有同情心', '追求真理', '内心强大'];
+                const extraTraits = ['直觉敏锐', '富有同情心', '追求真理', '内心强大', '独特魅力'];
+                const allTraits = [...traits, ...extraTraits.slice(0, 3)];
                 
                 document.getElementById('personalityContent').innerHTML = `
-                    <p style="margin-bottom:1rem;">亲爱的${currentUser.username}${gender}，你的牌灵是<strong style="color:var(--gold);">${spirit.name}</strong>。</p>
-                    <p style="margin-bottom:1rem;">这意味着你的核心性格特质是：</p>
+                    <p style="margin-bottom:1rem; line-height:1.8;">亲爱的<strong style="color:var(--gold);">${currentUser.username}</strong>${gender}，你的牌灵是<strong style="color:var(--gold);">${spirit.name}</strong>。</p>
+                    <p style="margin-bottom:1rem; color:var(--text-dim);">这意味着你的核心性格特质是：</p>
                     <div class="personality-traits">
-                        ${traits.map(t => `<span class="trait-tag">${t}</span>`).join('')}
-                        ${extraTraits.slice(0, 3).map(t => `<span class="trait-tag">${t}</span>`).join('')}
+                        ${allTraits.map(t => `<span class="trait-tag">${t}</span>`).join('')}
                     </div>
-                    <p style="margin-top:1rem;">${spirit.name}作为你的守护牌灵，暗示你在人生旅途中${spirit.meaning}。你天生具有${spirit.personality}的特质，这使你在面对挑战时具有独特的优势。</p>
-                    <p style="margin-top:1rem;">建议：发挥你的${traits[0]}特质，同时注意平衡${traits[1]}与实际行动的关系。</p>
+                    <p style="margin-top:1rem; line-height:1.8;">${spirit.name}作为你的守护牌灵，暗示你在人生旅途中具有${spirit.meaning}的特质。你天生${spirit.personality}，这使你在面对挑战时具有独特的优势。</p>
+                    <p style="margin-top:1rem; color:var(--gold);">💡 建议：发挥你的${traits[0]}特质，同时注意平衡${traits[1]}与实际行动的关系。</p>
                 `;
                 
-                // 保存资料
                 localStorage.setItem('tarotProfile_' + currentUser.username, JSON.stringify(userProfile));
-            }, 3000);
+            }, 2500);
         }
 
         function completeSetup() {
             document.getElementById('profileSetup').classList.remove('active');
-            showSection('home');
+            showPage('home');
+            showToast('✨ 设置完成！');
         }
 
-        // 历史记录
+        // ============ 历史记录 ============
         function loadHistory() {
             const list = document.getElementById('historyList');
             const userReadings = readings.filter(r => r.user === currentUser?.username);
             
             if (userReadings.length === 0) {
-                list.innerHTML = '<p style="text-align:center;color:rgba(255,255,255,0.5);">暂无记录</p>';
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📜</div>
+                        <p>暂无记录，快去测算吧！</p>
+                    </div>
+                `;
                 return;
             }
             
-            list.innerHTML = userReadings.map(r => `
-                <div class="history-item">
-                    <div>
-                        <div class="date">${r.date}</div>
-                        <div style="margin-top:0.5rem;">${r.cards.map(c => c.name).join('、')}</div>
+            list.innerHTML = userReadings.slice().reverse().map(r => {
+                const spreadNames = { single: '单牌', three: '三张牌阵', celtic: '凯尔特十字', relationship: '关系牌阵' };
+                return `
+                    <div class="history-item" onclick="viewReading(${r.id})">
+                        <div>
+                            <div class="date">${r.date}</div>
+                            <div class="cards">${spreadNames[r.spread]} · ${r.cards.map(c => c.name).join('、')}</div>
+                        </div>
+                        <span style="color:var(--gold); font-size:1.2rem;">›</span>
                     </div>
-                    <button class="btn btn-secondary" onclick="viewReading(${r.id})">查看</button>
-                </div>
-            `).reverse();
+                `;
+            }).join('');
         }
 
         function viewReading(id) {
@@ -1531,12 +1967,32 @@
             if (reading) {
                 selectedCards = reading.cards;
                 selectedSpread = reading.spread;
-                generateReading();
-                showSection('read');
+                currentReading = reading;
+                showPage('read');
+                document.getElementById('readingResult').classList.add('active');
+                document.getElementById('spreadSelect').style.display = 'none';
+                document.getElementById('cardSelection').style.display = 'none';
+                
+                // 重新渲染结果
+                const readingCards = document.getElementById('readingCards');
+                readingCards.innerHTML = '';
+                reading.cards.forEach((card, i) => {
+                    const positions = { single: ['指引'], three: ['过去', '现在', '未来'], celtic: ['现状', '挑战', '基础', '过去', '目标', '未来', '自我', '环境', '希望', '结果'], relationship: ['你', '对方', '关系', '基础', '未来'] };
+                    const pos = positions[reading.spread][i] || '';
+                    readingCards.innerHTML += `
+                        <div class="reading-card-display">
+                            <img src="${card.image}" alt="${card.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="card-fallback" style="display:none;">${createCardHTML(card, true)}</div>
+                            <h4>${card.name}</h4>
+                            <p class="pos">${pos}</p>
+                        </div>
+                    `;
+                });
+                document.getElementById('readingText').innerHTML = reading.text;
             }
         }
 
-        // 数据统计
+        // ============ 数据统计 ============
         function loadStats() {
             const userReadings = readings.filter(r => r.user === currentUser?.username);
             const monthAgo = new Date();
@@ -1554,40 +2010,54 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">${new Set(userReadings.flatMap(r => r.cards.map(c => c.name))).size}</div>
-                    <div class="stat-label">遇到不同牌数</div>
+                    <div class="stat-label">遇到不同牌</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-number">${userReadings.filter(r => r.spread === 'single').length}</div>
-                    <div class="stat-label">单牌占卜次数</div>
+                    <div class="stat-label">单牌占卜</div>
                 </div>
             `;
             
-            // 简单的柱状图
-            const ctx = document.getElementById('statsChart');
+            // 牌阵使用统计图
             const spreadCounts = {};
-            userReadings.forEach(r => {
-                spreadCounts[r.spread] = (spreadCounts[r.spread] || 0) + 1;
-            });
-            
+            userReadings.forEach(r => { spreadCounts[r.spread] = (spreadCounts[r.spread] || 0) + 1; });
             const maxVal = Math.max(...Object.values(spreadCounts), 1);
-            const bars = Object.entries(spreadCounts).map(([k, v]) => {
-                const labels = { single: '单牌', three: '三张', celtic: '凯尔特', relationship: '关系' };
-                return `
-                    <div style="display:flex;flex-direction:column;align-items:center;flex:1;">
-                        <div style="width:60%;background:linear-gradient(to top,var(--purple),var(--gold));border-radius:5px 5px 0 0;transition:height 1s;height:${(v/maxVal)*200}px;"></div>
-                        <div style="margin-top:0.5rem;font-size:0.8rem;">${labels[k]||k}</div>
-                        <div style="font-size:0.9rem;color:var(--gold);">${v}次</div>
-                    </div>
-                `;
-            }).join('');
+            const labels = { single: '单牌', three: '三张', celtic: '凯尔特', relationship: '关系' };
             
-            ctx.innerHTML = `
-                <h3 style="text-align:center;margin-bottom:1rem;color:var(--gold);">牌阵使用统计</h3>
-                <div style="display:flex;align-items:flex-end;justify-content:space-around;height:250px;padding:0 2rem;">
-                    ${bars || '<p style="color:rgba(255,255,255,0.5);">暂无数据</p>'}
+            const ctx = document.getElementById('statsChart');
+            const bars = Object.entries(spreadCounts).map(([k, v]) => `
+                <div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:60px;">
+                    <div style="width:70%;background:linear-gradient(to top,var(--purple),var(--gold));border-radius:5px 5px 0 0;height:${(v/maxVal)*180}px;transition:height 1s;"></div>
+                    <div style="margin-top:0.5rem;font-size:0.75rem;color:var(--text-dim);">${labels[k]||k}</div>
+                    <div style="font-size:0.9rem;color:var(--gold);font-weight:bold;">${v}次</div>
+                </div>
+            `).join('');
+            
+            ctx.innerHTML = userReadings.length > 0 ? `
+                <h3 style="text-align:center;margin-bottom:1rem;color:var(--gold);font-size:1rem;">牌阵使用统计</h3>
+                <div style="display:flex;align-items:flex-end;justify-content:space-around;height:200px;padding:0 1rem;">
+                    ${bars}
+                </div>
+            ` : `
+                <div class="empty-state">
+                    <div class="icon">📊</div>
+                    <p>暂无数据</p>
                 </div>
             `;
         }
+
+        // ============ 工具函数 ============
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.add('active');
+            setTimeout(() => toast.classList.remove('active'), 2500);
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('loginModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeLogin();
+        });
     </script>
 </body>
 </html>
